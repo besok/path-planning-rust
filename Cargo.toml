@@ -1,0 +1,16 @@
+[package]
+name = "path-planning-rust"
+description = "a handful of algorithms for path-planning"
+authors = ["BorisZhguchev <zhguchev@gmail.com>"]
+homepage = "https://github.com/besok/path-planning-rs"
+repository = "https://github.com/besok/path-planning-rs"
+readme = "README.md"
+license-file = "LICENSE"
+version = "0.1.0"
+edition = "2021"
+keywords = ["path-planning"]
+categories = ["algorithms"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
