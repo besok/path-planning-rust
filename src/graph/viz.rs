@@ -34,11 +34,11 @@ pub fn visualize<NL: ToDotNode, EL: ToDotEdge>(graph: &DiGraph<NL, EL>) -> Strin
     dot_graph.print(&mut PrinterContext::default())
 }
 
-pub fn visualize_to_file<NL: ToDotNode, EL: ToDotEdge>(graph: &DiGraph<NL, EL>, path:String) -> std::io::Result<String> {
+pub fn visualize_to_file<NL: ToDotNode, EL: ToDotEdge>(graph: &DiGraph<NL, EL>, path: String) -> std::io::Result<String> {
     let dot_graph: Graph = graph.into();
     exec(dot_graph, &mut PrinterContext::default(), vec![
         CommandArg::Output(path),
-        CommandArg::Format(Format::Svg)
+        CommandArg::Format(Format::Svg),
     ])
 }
 
@@ -76,18 +76,19 @@ mod tests {
             }
         ));
     }
-
     #[test]
     fn simple_viz_to_file_test() {
         let dot = visualize_to_file(&digraph!(
-            => [1,2,3,4,5,6] => {
-             1 => 2;
-             2 => [3,4];
-             [3,4] => 5;
+            => [1,2,3,4,5,6,7,8,9,10] => {
+             1 => [2,3,4];
+             [2,3,4] => 5;
+             [2,3,4] => 6;
              5 => 6;
-             6 => 1;
+             6 => [7,8];
+             [7,8] => 9;
+             9 => 10
             }
-        ),"dots/output.svg".to_string());
+        ), "dots/output.svg".to_string());
         println!("{:?}", dot)
     }
 }
