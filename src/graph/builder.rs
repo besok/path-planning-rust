@@ -2,13 +2,13 @@
 macro_rules! extend_nodes {
     ($graph:ident => [$(($id:expr, $p:expr)),+ $(,)?]) => {{
          $(
-            $graph.add_node($id,$p);
+            $graph.add_node_with_id($id,$p);
          )+
         $graph
     }};
     ($graph:ident => p[$($p:expr),+ $(,)?]) => {{
          $(
-           $graph.gen_node($p);
+           $graph.add_node($p);
          )+
         $graph
     }};
@@ -153,12 +153,11 @@ macro_rules! digraph {
 
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use crate::digraph;
     use crate::graph::{DiGraph, EmptyPayload, NId};
+    use std::collections::HashMap;
 
     #[derive(Default)]
     struct S(i32);
@@ -171,95 +170,99 @@ mod tests {
 
     #[test]
     fn simple_macro_v_d_test() {
-        let d = digraph!( S,usize);
-        let d = digraph!( S,S);
+        let d = digraph!(S, usize);
+        let d = digraph!(S, S);
         let d = digraph!(S);
-        let d = digraph!(_,S);
-        let d = digraph!( bool,S);
+        let d = digraph!(_, S);
+        let d = digraph!(bool, S);
         let d = digraph!(=> [1,2,3]);
-        assert_eq!(d.nodes,HashMap::from([(1,EmptyPayload),(2,EmptyPayload),(3,EmptyPayload)]));
-
-        let d = digraph!((i32) => [(1,1),(2,2),(3,0)]);
-        assert_eq!(d.nodes,HashMap::from([(1,1),(2,2),(3,0)]));
-
-        let d =
-            digraph!(
-                (_,i32) => [1,2,3,4] => {
-                    1 => 2;
-                    2 => (3,1);
-                    [4,3] => 1;
-                }
-            );
-        assert_eq!(d.nodes,HashMap::from([(1,EmptyPayload),(2,EmptyPayload),(3,EmptyPayload),(4,EmptyPayload)]));
-        assert_eq!(d.edges,
-                   HashMap::from([
-                       (1,HashMap::from([(2,0)])),
-                       (2,HashMap::from([(3,1)])),
-                       (3,HashMap::from([(1,0)])),
-                       (4,HashMap::from([(1,0)])),
-                   ])
+        assert_eq!(
+            d.nodes,
+            HashMap::from([(1, EmptyPayload), (2, EmptyPayload), (3, EmptyPayload)])
         );
 
+        let d = digraph!((i32) => [(1,1),(2,2),(3,0)]);
+        assert_eq!(d.nodes, HashMap::from([(1, 1), (2, 2), (3, 0)]));
+
+        let d = digraph!(
+            (_,i32) => [1,2,3,4] => {
+                1 => 2;
+                2 => (3,1);
+                [4,3] => 1;
+            }
+        );
+        assert_eq!(
+            d.nodes,
+            HashMap::from([
+                (1, EmptyPayload),
+                (2, EmptyPayload),
+                (3, EmptyPayload),
+                (4, EmptyPayload)
+            ])
+        );
+        assert_eq!(
+            d.edges,
+            HashMap::from([
+                (1, HashMap::from([(2, 0)])),
+                (2, HashMap::from([(3, 1)])),
+                (3, HashMap::from([(1, 0)])),
+                (4, HashMap::from([(1, 0)])),
+            ])
+        );
     }
 
     #[test]
     fn builder_nodes_test() {
         let mut g = digraph!(usize);
         let g = extend_nodes!(g => [(1,1),(2,1)]);
-        assert_eq!(g.nodes,HashMap::from([(1,1),(2,1)]));
-
+        assert_eq!(g.nodes, HashMap::from([(1, 1), (2, 1)]));
 
         let mut g = digraph!(usize);
         let g = extend_nodes!(g => p[1,2]);
-        assert_eq!(g.nodes,HashMap::from([(1,1),(2,2)]));
+        assert_eq!(g.nodes, HashMap::from([(1, 1), (2, 2)]));
 
         let mut g = digraph!(usize);
         let def_p = 100;
         let g = extend_nodes!(g => [(1,def_p),(2,def_p)]);
-        assert_eq!(g.nodes,HashMap::from([(1,100),(2,100)]));
+        assert_eq!(g.nodes, HashMap::from([(1, 100), (2, 100)]));
     }
-
 
     #[test]
     fn builder_edges_arr_to_test() {
-        let mut g = digraph!(_,i32);
+        let mut g = digraph!(_, i32);
         let mut g = extend_nodes!(g => [1,2,3,4,5,6,7]);
         let mut g = extend_edges!(g => {
             [(2,1),(3,1)] => 4
         });
-        assert_eq!(g.edges,
-                   HashMap::from([
-                       (2,HashMap::from([(4,1)])),
-                       (3,HashMap::from([(4,1)])),
-                   ])
+        assert_eq!(
+            g.edges,
+            HashMap::from([(2, HashMap::from([(4, 1)])), (3, HashMap::from([(4, 1)])),])
         );
 
-        let mut g = digraph!(_,i32);
+        let mut g = digraph!(_, i32);
         let mut g = extend_nodes!(g => [1,2,3,4,5,6,7]);
         let g = extend_edges!(g => {
             [(4,1),(1,1)] => 5;
             [(5,1),(6,1)] => 7;
         });
-        assert_eq!(g.edges,
-                   HashMap::from([
-                       (4,HashMap::from([(5,1)])),
-                       (1,HashMap::from([(5,1)])),
-                       (5,HashMap::from([(7,1)])),
-                       (6,HashMap::from([(7,1)])),
-                   ])
+        assert_eq!(
+            g.edges,
+            HashMap::from([
+                (4, HashMap::from([(5, 1)])),
+                (1, HashMap::from([(5, 1)])),
+                (5, HashMap::from([(7, 1)])),
+                (6, HashMap::from([(7, 1)])),
+            ])
         );
 
-        let mut g = digraph!(_,i32);
+        let mut g = digraph!(_, i32);
         let mut g = extend_nodes!(g => [1,2,3,4,5,6,7]);
         let mut g = extend_edges!(g => {
             [1,2] => (3,10)
         });
-        assert_eq!(g.edges,
-                   HashMap::from([
-                       (2,HashMap::from([(3,10)])),
-                       (1,HashMap::from([(3,10)])),
-
-                   ])
+        assert_eq!(
+            g.edges,
+            HashMap::from([(2, HashMap::from([(3, 10)])), (1, HashMap::from([(3, 10)])),])
         );
 
         let mut g = extend_edges!(g => {
@@ -267,16 +270,16 @@ mod tests {
             [3,4] => (5,1);
             [(5,1),(6,10)] => 7
         });
-        assert_eq!(g.edges,
-                   HashMap::from([
-                       (2,HashMap::from([(3,10)])),
-                       (1,HashMap::from([(3,10)])),
-                       (3,HashMap::from([(5,1)])),
-                       (4,HashMap::from([(5,1)])),
-                       (5,HashMap::from([(7,1)])),
-                       (6,HashMap::from([(7,10)])),
-
-                   ])
+        assert_eq!(
+            g.edges,
+            HashMap::from([
+                (2, HashMap::from([(3, 10)])),
+                (1, HashMap::from([(3, 10)])),
+                (3, HashMap::from([(5, 1)])),
+                (4, HashMap::from([(5, 1)])),
+                (5, HashMap::from([(7, 1)])),
+                (6, HashMap::from([(7, 10)])),
+            ])
         );
 
         let mut g = digraph!();
@@ -284,44 +287,44 @@ mod tests {
         let mut g = extend_edges!(g => {
             [1,2] => 3
         });
-        assert_eq!(g.edges,
-                   HashMap::from([
-                       (2,HashMap::from([(3,EmptyPayload)])),
-                       (1,HashMap::from([(3,EmptyPayload)])),
-
-                   ])
+        assert_eq!(
+            g.edges,
+            HashMap::from([
+                (2, HashMap::from([(3, EmptyPayload)])),
+                (1, HashMap::from([(3, EmptyPayload)])),
+            ])
         );
         let mut g = extend_edges!(g => {
             [1,2] => 3;
             [3,4] => 5;
         });
-        assert_eq!(g.edges,
-                   HashMap::from([
-                       (2,HashMap::from([(3,EmptyPayload)])),
-                       (1,HashMap::from([(3,EmptyPayload)])),
-                       (3,HashMap::from([(5,EmptyPayload)])),
-                       (4,HashMap::from([(5,EmptyPayload)])),
-
-                   ])
+        assert_eq!(
+            g.edges,
+            HashMap::from([
+                (2, HashMap::from([(3, EmptyPayload)])),
+                (1, HashMap::from([(3, EmptyPayload)])),
+                (3, HashMap::from([(5, EmptyPayload)])),
+                (4, HashMap::from([(5, EmptyPayload)])),
+            ])
         );
 
         let mut g = extend_edges!(g => {
             5 => [6,7];
             6 => [7,1];
         });
-        assert_eq!(g.edges,
-                   HashMap::from([
-                       (2,HashMap::from([(3,EmptyPayload)])),
-                       (1,HashMap::from([(3,EmptyPayload)])),
-                       (3,HashMap::from([(5,EmptyPayload)])),
-                       (4,HashMap::from([(5,EmptyPayload)])),
-                       (5,HashMap::from([(7,EmptyPayload),(6,EmptyPayload)])),
-                       (6,HashMap::from([(7,EmptyPayload),(1,EmptyPayload)])),
-
-                   ])
+        assert_eq!(
+            g.edges,
+            HashMap::from([
+                (2, HashMap::from([(3, EmptyPayload)])),
+                (1, HashMap::from([(3, EmptyPayload)])),
+                (3, HashMap::from([(5, EmptyPayload)])),
+                (4, HashMap::from([(5, EmptyPayload)])),
+                (5, HashMap::from([(7, EmptyPayload), (6, EmptyPayload)])),
+                (6, HashMap::from([(7, EmptyPayload), (1, EmptyPayload)])),
+            ])
         );
 
-        let mut g = digraph!(_,i32);
+        let mut g = digraph!(_, i32);
         let mut g = extend_nodes!(g => [1,2,3,4,5,6,7]);
         let g = extend_edges!(g => {
             [(1,1),(2,1)] => 3;
@@ -330,23 +333,21 @@ mod tests {
             7 => [1,2]
 
         });
-        assert_eq!(g.edges,
-                   HashMap::from([
-                       (1,HashMap::from([(3,1)])),
-                       (2,HashMap::from([(3,1)])),
-                       (3,HashMap::from([(4,1)])),
-                       (4,HashMap::from([(5,1),(6,1)])),
-                       (7,HashMap::from([(1,0),(2,0)])),
-
-
-                   ])
+        assert_eq!(
+            g.edges,
+            HashMap::from([
+                (1, HashMap::from([(3, 1)])),
+                (2, HashMap::from([(3, 1)])),
+                (3, HashMap::from([(4, 1)])),
+                (4, HashMap::from([(5, 1), (6, 1)])),
+                (7, HashMap::from([(1, 0), (2, 0)])),
+            ])
         );
     }
 
-
     #[test]
     fn builder_edges_simple_to_test() {
-        let mut g = digraph!(_,i32);
+        let mut g = digraph!(_, i32);
         let mut g = extend_nodes!(g => [1,2,3,4,5,6,7]);
         let mut g = extend_edges!(g => {
             1 => [1,2];
@@ -359,12 +360,10 @@ mod tests {
 
         let f = g.edges;
 
-        assert_eq!(f.get(&1),Some(&HashMap::from([(1,0),(2,0)])));
-        assert_eq!(f.get(&2),Some(&HashMap::from([(3,0)])));
-        assert_eq!(f.get(&3),Some(&HashMap::from([(4,0)])));
-        assert_eq!(f.get(&4),Some(&HashMap::from([(5,7)])));
-        assert_eq!(f.get(&7),Some(&HashMap::from([(1,0)])));
-
+        assert_eq!(f.get(&1), Some(&HashMap::from([(1, 0), (2, 0)])));
+        assert_eq!(f.get(&2), Some(&HashMap::from([(3, 0)])));
+        assert_eq!(f.get(&3), Some(&HashMap::from([(4, 0)])));
+        assert_eq!(f.get(&4), Some(&HashMap::from([(5, 7)])));
+        assert_eq!(f.get(&7), Some(&HashMap::from([(1, 0)])));
     }
-
 }
