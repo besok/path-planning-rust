@@ -1,6 +1,7 @@
-use crate::graph::{DiGraph, NId};
+use crate::graph::{DiGraph};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use std::hash::Hash;
 use MinWeight::{Inf, Some, Zero};
 
 type Score = usize;
@@ -56,12 +57,16 @@ impl<E> Ord for MinWeight<E> {
     }
 }
 
-pub struct Dijkstra<'a, NL, EL> {
-    graph: &'a DiGraph<NL, EL>,
+pub struct Dijkstra<'a,NId,NL, EL>
+where NId: Eq+ Hash
+{
+    graph: &'a DiGraph<NId,NL, EL>,
 }
 
-impl<'a, NL, EL> Dijkstra<'a, NL, EL> {
-    pub fn new(graph: &'a DiGraph<NL, EL>) -> Self {
+impl<'a,NId, NL, EL> Dijkstra<'a,NId, NL, EL>
+    where NId: Eq+ Hash
+{
+    pub fn new(graph: &'a DiGraph<NId,NL, EL>) -> Self {
         Self { graph }
     }
 

@@ -1,24 +1,26 @@
-use crate::graph::{DiGraph, EmptyPayload, NId};
+use crate::graph::{DiGraph, EmptyPayload};
 use graphviz_rust::cmd::{CommandArg, Format};
 use graphviz_rust::dot_generator::{attr, edge, graph, id, node, node_id, stmt};
 use graphviz_rust::dot_structures::*;
 use graphviz_rust::printer::{DotPrinter, PrinterContext};
 use graphviz_rust::{exec, exec_dot};
+use std::hash::Hash;
 
-pub trait ToDotNode {
+pub trait ToDotNode<NId> {
     fn stmt(&self, id: &NId) -> Stmt;
 }
 
-pub trait ToDotEdge {
+pub trait ToDotEdge<NId> {
     fn stmt(&self, from: &NId, to: &NId) -> Stmt;
 }
 
-impl<NL, EL> From<&DiGraph<NL, EL>> for Graph
+impl<NId, NL, EL> From<&DiGraph<NId, NL, EL>> for Graph
 where
-    NL: ToDotNode,
-    EL: ToDotEdge,
+    NId: Eq + Hash,
+    NL: ToDotNode<NId>,
+    EL: ToDotEdge<NId>,
 {
-    fn from(g: &DiGraph<NL, EL>) -> Self {
+    fn from(g: &DiGraph<NId, NL, EL>) -> Self {
         let mut dot = graph!(strict di id!("di_graph"));
         for (id, pl) in g.nodes.iter() {
             dot.add_stmt(pl.stmt(id));
@@ -32,13 +34,15 @@ where
     }
 }
 
-pub fn visualize<NL: ToDotNode, EL: ToDotEdge>(graph: &DiGraph<NL, EL>) -> String {
+pub fn visualize<NId: Eq + Hash, NL: ToDotNode<NId>, EL: ToDotEdge<NId>>(
+    graph: &DiGraph<NId, NL, EL>,
+) -> String {
     let dot_graph: Graph = graph.into();
     dot_graph.print(&mut PrinterContext::default())
 }
 
-pub fn visualize_to_file<NL: ToDotNode, EL: ToDotEdge>(
-    graph: &DiGraph<NL, EL>,
+pub fn visualize_to_file<NId: Eq + Hash, NL: ToDotNode<NId>, EL: ToDotEdge<NId>>(
+    graph: &DiGraph<NId, NL, EL>,
     path: String,
 ) -> std::io::Result<String> {
     let dot_graph: Graph = graph.into();
@@ -49,24 +53,24 @@ pub fn visualize_to_file<NL: ToDotNode, EL: ToDotEdge>(
     )
 }
 
-impl ToDotNode for EmptyPayload {
+impl<NId: ToString> ToDotNode<NId> for EmptyPayload {
     fn stmt(&self, n_id: &NId) -> Stmt {
-        let label = format!("{}", n_id);
+        let label = format!("{}", n_id.to_string());
         stmt!(node!(label.as_str()))
     }
 }
 
-impl ToDotEdge for EmptyPayload {
+impl<NId: ToString> ToDotEdge<NId> for EmptyPayload {
     fn stmt(&self, from: &NId, to: &NId) -> Stmt {
-        let from = format!("{}", from);
-        let to = format!("{}", to);
+        let from = format!("{}", from.to_string());
+        let to = format!("{}", to.to_string());
         stmt!(edge!(node_id!(from.as_str()) => node_id!(to.as_str())))
     }
 }
-impl ToDotEdge for i32 {
+impl<NId: ToString> ToDotEdge<NId> for i32 {
     fn stmt(&self, from: &NId, to: &NId) -> Stmt {
-        let from = format!("{}", from);
-        let to = format!("{}", to);
+        let from = format!("{}", from.to_string());
+        let to = format!("{}", to.to_string());
         let p = format!("{}", self);
         stmt!(edge!(node_id!(from.as_str()) => node_id!(to.as_str()); attr!("label",p.as_str())))
     }
@@ -113,7 +117,7 @@ mod tests {
     fn simple_viz_to_file_payload_edge_test() {
         let dot = visualize_to_file(
             &digraph!(
-               (_,i32) => [1,2,3,4,5,6,7,8,9,10] => {
+               (_,_,i32) => [1,2,3,4,5,6,7,8,9,10] => {
                  1 => [2,3,4];
                  [2,3,4] => (5,100);
                  [2,3,4] => (6,10);
@@ -121,6 +125,19 @@ mod tests {
                  6 => [(7,14),(8,14)];
                  [7,8] => 9;
                  9 => 10
+                }
+            ),
+            "dots/output.svg".to_string(),
+        );
+        println!("{:?}", dot)
+    }
+    #[test]
+    fn simple_viz_to_file_str_edge_test() {
+        let dot = visualize_to_file(
+            &digraph!(
+               (&str,_,_) => ["company","employer","employee"] => {
+                    "employer" => "company";
+                    "company" => "employee"
                 }
             ),
             "dots/output.svg".to_string(),

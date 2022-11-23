@@ -9,8 +9,7 @@ use graphviz_rust::dot_generator::{graph, id, node};
 use graphviz_rust::dot_structures::{Graph, Id, Stmt};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Error, Formatter};
-
-type NId = usize;
+use std::hash::Hash;
 
 #[derive(Copy, Clone, PartialEq, Default)]
 pub struct EmptyPayload;
@@ -22,48 +21,43 @@ impl Debug for EmptyPayload {
 }
 
 #[derive(Debug)]
-pub struct DiGraph<NL, EL> {
-    counter: usize,
+pub struct DiGraph<NId, NL, EL>
+where
+    NId: Eq + Hash,
+{
     nodes: HashMap<NId, NL>,
     edges: HashMap<NId, HashMap<NId, EL>>,
     start: Option<NId>,
 }
 
-impl DiGraph<EmptyPayload, EmptyPayload> {
+impl DiGraph<usize,EmptyPayload, EmptyPayload> {
     pub fn empty() -> Self {
         Self::new()
     }
 }
 
-impl<NL, EL> DiGraph<NL, EL> {
+impl<NId,NL, EL> DiGraph<NId,NL, EL>
+where
+    NId: Clone + Eq+ Hash,
+{
     fn insert_new_node(&mut self, payload: NL, id: NId) -> NId {
-        self.nodes.insert(id, payload);
+        self.nodes.insert(id.clone(), payload);
         if self.start.is_none() {
-            self.start = Some(id)
+            self.start = Some(id.clone())
         }
-        if id > self.counter {
-            self.counter = id
-        }
+
         id
-    }
-    fn next_id(&mut self) -> NId {
-        self.counter += 1;
-        self.counter
     }
 
     pub fn new() -> Self {
         Self {
-            counter: 0,
             nodes: HashMap::new(),
             edges: HashMap::new(),
             start: None,
         }
     }
-    pub fn add_node(&mut self, payload: NL) -> Option<NId> {
-        let id = self.next_id();
-        Some(self.insert_new_node(payload, id))
-    }
-    fn add_node_with_id(&mut self, id: NId, payload: NL) -> Option<NId> {
+
+    fn add_node(&mut self, id: NId, payload: NL) -> Option<NId> {
         Some(self.insert_new_node(payload, id))
     }
     pub fn remove_node(&mut self, id: NId) -> Option<NL> {
@@ -81,25 +75,27 @@ impl<NL, EL> DiGraph<NL, EL> {
         self.edges.get(&from)
     }
 
-    pub fn start(&self) -> Option<NId> {
-        self.start
+    pub fn start(&self) -> &Option<NId> {
+        &self.start
     }
-    pub fn find(&self) -> GraphAnalyzer<NL, EL> {
+    pub fn find(&self) -> GraphAnalyzer<NId,NL, EL> {
         GraphAnalyzer { graph: &self }
     }
 }
 
-impl<NL, EL> DiGraph<NL, EL>
+impl<NId, NL, EL> DiGraph<NId, NL, EL>
 where
+    NId: Clone + Eq+ Hash,
     NL: Default,
 {
     fn add_bare_node(&mut self, id: NId) -> Option<NId> {
-        self.add_node_with_id(id, Default::default())
+        self.add_node(id, Default::default())
     }
 }
 
-impl<NL, EL> DiGraph<NL, EL>
+impl<NId, NL, EL> DiGraph<NId, NL, EL>
 where
+    NId: Clone + Eq+ Hash,
     EL: Default,
 {
     pub fn add_bare_edge(&mut self, from: NId, to: NId) -> Option<EL> {
