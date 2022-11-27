@@ -133,10 +133,6 @@ macro_rules! digraph {
         DiGraph::<$id,$n,$e>::new()
     };
 
-
-
-
-
     (($($tps:tt)+) => $nodes:tt ) => {{
        let mut g = digraph!($($tps)+);
        extend_nodes!(g => $nodes)

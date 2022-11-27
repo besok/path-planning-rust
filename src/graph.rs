@@ -3,6 +3,7 @@ pub mod builder;
 pub mod dijkstra;
 pub mod visit;
 pub mod visualizer;
+pub mod min_weight;
 
 use crate::graph::analyzer::GraphAnalyzer;
 use graphviz_rust::dot_generator::{graph, id, node};
@@ -10,6 +11,7 @@ use graphviz_rust::dot_structures::{Graph, Id, Stmt};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Error, Formatter};
 use std::hash::Hash;
+use crate::graph::visualizer::{ToDotEdge, ToDotNode, visualize_to_file};
 
 #[derive(Copy, Clone, PartialEq, Default)]
 pub struct EmptyPayload;
@@ -36,6 +38,16 @@ impl DiGraph<usize,EmptyPayload, EmptyPayload> {
     }
 }
 
+impl<NId,NL, EL> DiGraph<NId,NL, EL>
+where
+    NId: Clone + Eq+ Hash,
+    NL: ToDotNode<NId>,
+    EL: ToDotEdge<NId>,
+{
+    pub fn to_file(&self, path:String) -> std::io::Result<String> {
+        visualize_to_file(&self,path)
+    }
+}
 impl<NId,NL, EL> DiGraph<NId,NL, EL>
 where
     NId: Clone + Eq+ Hash,
@@ -81,6 +93,7 @@ where
     pub fn find(&self) -> GraphAnalyzer<NId,NL, EL> {
         GraphAnalyzer { graph: &self }
     }
+
 }
 
 impl<NId, NL, EL> DiGraph<NId, NL, EL>

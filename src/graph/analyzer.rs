@@ -1,5 +1,7 @@
 use std::hash::Hash;
+use graphviz_rust::dot_structures::Node;
 use crate::graph::{DiGraph};
+use crate::graph::dijkstra::DijkstraPath;
 
 #[derive(Debug)]
 pub struct GraphAnalyzer<'a, NodeId, NL, EL>
@@ -22,6 +24,8 @@ where
     pub fn node(&self, id: &NodeId, payload: &NL) -> Option<&NL> {
         self.graph.nodes.get(id).filter(|v| *v == payload)
     }
+
+
 }
 
 impl<'a,NodeId, NL, EL> GraphAnalyzer<'a,NodeId, NL, EL>

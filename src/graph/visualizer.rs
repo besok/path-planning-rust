@@ -67,11 +67,11 @@ impl<NId: ToString> ToDotEdge<NId> for EmptyPayload {
         stmt!(edge!(node_id!(from.as_str()) => node_id!(to.as_str())))
     }
 }
-impl<NId: ToString> ToDotEdge<NId> for i32 {
+impl<NId: ToString,T:ToString> ToDotEdge<NId> for T {
     fn stmt(&self, from: &NId, to: &NId) -> Stmt {
         let from = format!("{}", from.to_string());
         let to = format!("{}", to.to_string());
-        let p = format!("{}", self);
+        let p = format!("{}", self.to_string());
         stmt!(edge!(node_id!(from.as_str()) => node_id!(to.as_str()); attr!("label",p.as_str())))
     }
 }
