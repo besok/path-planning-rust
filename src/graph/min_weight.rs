@@ -3,22 +3,26 @@ use std::ops::Add;
 use Score::{Inf, Value, Zero};
 
 #[derive(Debug, Clone)]
-pub struct MinWeight<'a, Id, ScoreValue>(pub &'a Id, pub Score<ScoreValue>)
-where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone;
-
-#[derive(Debug, Clone)]
-pub enum Score<ScoreValue>
-where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone,
-{
+pub enum Score<ScoreValue> {
     Inf,
     Zero,
     Value(ScoreValue),
 }
 
-impl<ScoreValue> Score<ScoreValue> where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone,
+impl<ScoreValue:ToString> ToString for Score<ScoreValue> {
+    fn to_string(&self) -> String {
+        match self{
+            Inf => "inf".to_string(),
+            Zero => "zero".to_string(),
+            Value(v) => v.to_string(),
+        }
+    }
+}
+
+
+impl<ScoreValue> Score<ScoreValue>
+where
+    ScoreValue: Add<Output = ScoreValue> + Clone,
 {
     pub fn add(&self, score: ScoreValue) -> Score<ScoreValue> {
         match &self {
@@ -27,18 +31,39 @@ impl<ScoreValue> Score<ScoreValue> where
             Value(left) => Value(left.clone() + score),
         }
     }
-
 }
 
+impl<'a, ScoreValue: Eq> Eq for Score<ScoreValue> {}
+impl<'a, ScoreValue: Eq> PartialEq for Score<ScoreValue> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Inf, Inf) | (Zero, Zero) => true,
+            (Value(lhs), Value(rhs)) => lhs.eq(rhs),
+            _ => false,
+        }
+    }
+}
+impl<ScoreValue: Ord> PartialOrd for Score<ScoreValue> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self == other {
+            Some(Ordering::Equal)
+        } else {
+            match (self, other) {
+                (Inf, _) => Some(Ordering::Greater),
+                (Value(_), Inf) => Some(Ordering::Less),
+                (Zero, _) => Some(Ordering::Less),
+                (Value(lhs), Value(rhs)) => Some(lhs.cmp(rhs)),
+                _ => None,
+            }
+        }
+    }
+}
 
-impl<'a, Id, ScoreValue> Eq for MinWeight<'a, Id, ScoreValue>
-    where
-        ScoreValue: Add<Output = ScoreValue> + Ord + Clone {}
+#[derive(Debug, Clone)]
+pub struct MinWeight<'a, Id, ScoreValue>(pub &'a Id, pub Score<ScoreValue>);
 
-impl<'a, Id, ScoreValue> PartialEq<Self> for MinWeight<'a, Id, ScoreValue>
-where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone,
-{
+impl<'a, Id, ScoreValue: Ord> Eq for MinWeight<'a, Id, ScoreValue> {}
+impl<'a, Id, ScoreValue: Ord> PartialEq<Self> for MinWeight<'a, Id, ScoreValue> {
     fn eq(&self, other: &Self) -> bool {
         match (&self.1, &other.1) {
             (Inf, Inf) | (Zero, Zero) => true,
@@ -48,19 +73,13 @@ where
     }
 }
 
-impl<'a, Id, ScoreValue> PartialOrd<Self> for MinWeight<'a, Id, ScoreValue>
-where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone,
-{
+impl<'a, Id, ScoreValue: Ord> PartialOrd<Self> for MinWeight<'a, Id, ScoreValue> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<'a, Id, ScoreValue> Ord for MinWeight<'a, Id, ScoreValue>
-where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone,
-{
+impl<'a, Id, ScoreValue: Ord> Ord for MinWeight<'a, Id, ScoreValue> {
     fn cmp(&self, other: &Self) -> Ordering {
         if self.eq(other) {
             Ordering::Equal
@@ -81,37 +100,6 @@ where
                         Ordering::Greater
                     }
                 }
-            }
-        }
-    }
-}
-
-impl<'a, ScoreValue> Eq for Score<ScoreValue>
-where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone,{}
-impl<'a, ScoreValue> PartialEq for Score<ScoreValue>
-where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone,{
-    fn eq(&self, other: &Self) -> bool {
-        match (self,other){
-            (Inf,Inf) | (Zero, Zero) => true,
-            (Value(lhs),Value(rhs)) => lhs.eq(rhs),
-            _ => false
-        }
-    }
-}
-impl<'a, ScoreValue> PartialOrd for Score<ScoreValue>
-where
-    ScoreValue: Add<Output = ScoreValue> + Ord + Clone,{
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self == other{ Some(Ordering::Equal)}
-        else {
-            match (self,other) {
-                (Inf,_) => Some(Ordering::Greater),
-                (Value(_),Inf) => Some(Ordering::Less),
-                (Zero,_) => Some(Ordering::Less),
-                (Value(lhs),Value(rhs)) => Some(lhs.cmp(rhs)),
-                _ => None
             }
         }
     }

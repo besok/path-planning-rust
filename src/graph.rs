@@ -1,20 +1,26 @@
 pub mod analyzer;
 pub mod builder;
 pub mod dijkstra;
+pub mod min_weight;
 pub mod visit;
 pub mod visualizer;
-pub mod min_weight;
 
 use crate::graph::analyzer::GraphAnalyzer;
+use crate::graph::visualizer::{visualize_to_file, VizGraph, ToStringProcessor, Processor, visualize};
 use graphviz_rust::dot_generator::{graph, id, node};
 use graphviz_rust::dot_structures::{Graph, Id, Stmt};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Error, Formatter};
 use std::hash::Hash;
-use crate::graph::visualizer::{ToDotEdge, ToDotNode, visualize_to_file};
 
 #[derive(Copy, Clone, PartialEq, Default)]
 pub struct EmptyPayload;
+
+impl ToString for EmptyPayload {
+    fn to_string(&self) -> String {
+        "".to_string()
+    }
+}
 
 impl Debug for EmptyPayload {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -32,25 +38,44 @@ where
     start: Option<NId>,
 }
 
-impl DiGraph<usize,EmptyPayload, EmptyPayload> {
+impl DiGraph<usize, EmptyPayload, EmptyPayload> {
     pub fn empty() -> Self {
         Self::new()
     }
 }
 
-impl<NId,NL, EL> DiGraph<NId,NL, EL>
+impl<NId, NL, EL> DiGraph<NId, NL, EL>
 where
-    NId: Clone + Eq+ Hash,
-    NL: ToDotNode<NId>,
-    EL: ToDotEdge<NId>,
+    NId: Eq + Hash + ToString,
+    NL: ToString,
+    EL: ToString,
 {
-    pub fn to_file(&self, path:String) -> std::io::Result<String> {
-        visualize_to_file(&self,path)
+
+}
+
+impl<NId: ToString, NL: ToString, EL: ToString> DiGraph<NId, NL, EL>
+where
+    NId: Eq + Hash + ToString,
+    NL: ToString,
+    EL: ToString,
+{
+    pub fn to_file(&self, path: &str) -> std::io::Result<String> {
+        let cg = VizGraph::new(self);
+        let graph = cg.to_dot(ToStringProcessor {});
+        visualize_to_file(graph, path.to_string())
+    }
+    pub fn to_file_with<'a,P>(&'a self, path: &str, processor:P ) -> std::io::Result<String>
+    where P:Processor<'a,NId,NL,EL>
+    {
+        let cg = VizGraph::new(self);
+        let graph = cg.to_dot(processor);
+        visualize_to_file(graph, path.to_string())
     }
 }
-impl<NId,NL, EL> DiGraph<NId,NL, EL>
+
+impl<NId, NL, EL> DiGraph<NId, NL, EL>
 where
-    NId: Clone + Eq+ Hash,
+    NId: Clone + Eq + Hash,
 {
     fn insert_new_node(&mut self, payload: NL, id: NId) -> NId {
         self.nodes.insert(id.clone(), payload);
@@ -90,15 +115,14 @@ where
     pub fn start(&self) -> &Option<NId> {
         &self.start
     }
-    pub fn find(&self) -> GraphAnalyzer<NId,NL, EL> {
+    pub fn find(&self) -> GraphAnalyzer<NId, NL, EL> {
         GraphAnalyzer { graph: &self }
     }
-
 }
 
 impl<NId, NL, EL> DiGraph<NId, NL, EL>
 where
-    NId: Clone + Eq+ Hash,
+    NId: Clone + Eq + Hash,
     NL: Default,
 {
     fn add_bare_node(&mut self, id: NId) -> Option<NId> {
@@ -108,7 +132,7 @@ where
 
 impl<NId, NL, EL> DiGraph<NId, NL, EL>
 where
-    NId: Clone + Eq+ Hash,
+    NId: Clone + Eq + Hash,
     EL: Default,
 {
     pub fn add_bare_edge(&mut self, from: NId, to: NId) -> Option<EL> {
