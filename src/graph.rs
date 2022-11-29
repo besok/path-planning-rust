@@ -1,12 +1,11 @@
 pub mod analyzer;
 pub mod builder;
-pub mod dijkstra;
-pub mod min_weight;
-pub mod visit;
 pub mod visualizer;
 
 use crate::graph::analyzer::GraphAnalyzer;
-use crate::graph::visualizer::{visualize_to_file, VizGraph, ToStringProcessor, Processor, visualize};
+use crate::graph::visualizer::{visualize, visualize_to_file};
+use crate::graph::visualizer::dot::*;
+
 use graphviz_rust::dot_generator::{graph, id, node};
 use graphviz_rust::dot_structures::{Graph, Id, Stmt};
 use std::collections::{HashMap, HashSet};

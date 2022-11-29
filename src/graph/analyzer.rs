@@ -1,7 +1,11 @@
 use std::hash::Hash;
 use graphviz_rust::dot_structures::Node;
-use crate::graph::{DiGraph};
-use crate::graph::dijkstra::DijkstraPath;
+use crate::graph::DiGraph;
+use crate::graph::analyzer::dijkstra::DijkstraPath;
+
+pub mod dijkstra;
+pub mod min_weight;
+pub mod visit;
 
 #[derive(Debug)]
 pub struct GraphAnalyzer<'a, NodeId, NL, EL>

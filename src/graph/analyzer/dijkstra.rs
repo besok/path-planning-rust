@@ -1,5 +1,5 @@
-use crate::graph::min_weight::{MinWeight, Score};
-use crate::graph::visualizer::{Processor, ToStringProcessor};
+use crate::graph::analyzer::min_weight::{MinWeight, Score};
+use crate::graph::visualizer::dot::{Processor, ToStringProcessor};
 use crate::graph::DiGraph;
 use graphviz_rust::attributes::*;
 use graphviz_rust::dot_generator::*;
@@ -241,11 +241,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::graph::dijkstra::{
+    use crate::graph::analyzer::dijkstra::{
         DijkstraPath, MinPathProcessor, MinScorePathProcessor, MinWeight,
     };
-    use crate::graph::min_weight::Score;
-    use crate::graph::min_weight::Score::*;
+    use crate::graph::analyzer::min_weight::Score;
+    use crate::graph::analyzer::min_weight::Score::*;
     use crate::graph::DiGraph;
     use crate::graph::EmptyPayload;
     use crate::{digraph, extend_edges, extend_nodes};
