@@ -26,7 +26,7 @@ where
     NId: Eq + Hash + Clone,
     EL: Ord + Add<Output = EL> + Clone,
 {
-    pub fn on_edge(&mut self, start: NId) -> MinPathMap<NId, EL> {
+    pub fn on_edge(&mut self, start: NId) -> MinPath<NId, EL> {
         self.on_edge_custom(start, identity)
     }
 }
@@ -36,7 +36,7 @@ where
     NId: Eq + Hash + Clone,
     EL: Clone,
 {
-    pub fn on_edge_custom<ScoreV, F>(&mut self, start: NId, to_score: F) -> MinPathMap<NId, ScoreV>
+    pub fn on_edge_custom<ScoreV, F>(&mut self, start: NId, to_score: F) -> MinPath<NId, ScoreV>
     where
         F: Fn(EL) -> ScoreV,
         ScoreV: Ord + Add<Output = ScoreV> + Clone,
@@ -66,7 +66,7 @@ where
                 }
             }
         }
-        MinPathMap::new(start, dist, path)
+        MinPath::new(start, dist, path)
     }
 }
 
@@ -80,7 +80,7 @@ where
 }
 
 #[derive(Debug)]
-pub struct MinPathMap<NId, ScoreV>
+pub struct MinPath<NId, ScoreV>
 where
     NId: Eq + Hash + Clone,
     ScoreV: Clone,
@@ -90,7 +90,7 @@ where
     path: HashMap<NId, NId>,
 }
 
-impl<NId, ScoreV> MinPathMap<NId, ScoreV>
+impl<NId, ScoreV> MinPath<NId, ScoreV>
 where
     NId: Eq + Hash + Clone,
     ScoreV: Clone,
@@ -202,21 +202,12 @@ where
         } else {
             let f = self.path.get(0).unwrap();
             let l = self.path.last().unwrap();
+            let green = NodeAttributes::color(color_name::green);
             if f == id || l == id {
-                self.delegate.node_with_attrs(
-                    id,
-                    nl,
-                    vec![
-                        NodeAttributes::color(color_name::green),
-                        NodeAttributes::style("bold".to_string()),
-                    ],
-                )
+                let bold = NodeAttributes::style("bold".to_string());
+                self.delegate.node_with_attrs(id, nl, vec![green, bold])
             } else if self.path.contains(id) {
-                self.delegate.node_with_attrs(
-                    id,
-                    nl,
-                    vec![NodeAttributes::color(color_name::green)],
-                )
+                self.delegate.node_with_attrs(id, nl, vec![green])
             } else {
                 (&self.delegate as &dyn Processor<NId, NL, EL>).node(id, nl)
             }
@@ -236,16 +227,12 @@ where
             };
         }
 
+        let dotted = EdgeAttributes::style("dotted".to_string());
         match (f, t) {
             (Some(f), Some(t)) if f < t => {
                 (&self.delegate as &dyn Processor<NId, NL, EL>).edge(from, to, el)
             }
-            e => self.delegate.edge_with_attrs(
-                from,
-                to,
-                el,
-                vec![EdgeAttributes::style("dotted".to_string())],
-            ),
+            _ => self.delegate.edge_with_attrs(from, to, el, vec![dotted]),
         }
     }
 }
@@ -263,6 +250,7 @@ mod tests {
     use crate::graph::EmptyPayload;
     use crate::{digraph, extend_edges, extend_nodes};
     use std::collections::BinaryHeap;
+    use std::ops::Add;
 
     #[test]
     fn simple_test() {
@@ -377,9 +365,9 @@ mod tests {
            [8,9,10] => (11,1)
 
         });
-        graph.to_file("dots/output.svg");
-        let mut d = DijkstraPath::new(&graph);
-        let map = d.on_edge(1);
+        let _ = graph.to_file("dots/output.svg");
+        let mut dijkstra = DijkstraPath::new(&graph);
+        let map = dijkstra.on_edge(1);
         let to = map.trail(&11).unwrap();
         assert_eq!(to, vec![1, 2, 4, 6, 7, 8, 11]);
         let r = graph.to_file_with("dots/output_path.svg", MinPathProcessor::new(to));
@@ -389,5 +377,48 @@ mod tests {
             MinScorePathProcessor::new(map.from, map.distance),
         );
         println!("{:?}", r);
+    }
+    #[derive(Clone,Ord,PartialOrd,PartialEq,Eq)]
+    struct One(usize);
+
+    impl Add for One {
+        type Output = One;
+
+        fn add(self, rhs: Self) -> Self::Output {
+            One(self.0 + rhs.0)
+        }
+    }
+
+
+    impl ToString for One {
+        fn to_string(&self) -> String {
+            self.0.to_string()
+        }
+    }
+
+    impl Default for One {
+        fn default() -> Self {
+            One(1)
+        }
+    }
+
+    #[test]
+    fn one_dijkstra_test() {
+        let graph = digraph!((_,_,One) => [1,2,3,4,5,6,7,8] => {
+           1 => [2,3,4];
+           [2,3] => 5;
+           4 => 6;
+           5 => 6;
+           6 => 7;
+           7 => 8;
+        });
+        let r = graph.to_file("dots/graph.svg");
+        assert!(r.is_ok());
+        let mut d_path = DijkstraPath::new(&graph);
+        let path = d_path.on_edge(1);
+        let trail = path.trail(&8).unwrap();
+
+        let r = graph.to_file_with("dots/graph_path.svg", MinPathProcessor::new(trail));
+        assert!(r.is_ok());
     }
 }

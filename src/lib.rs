@@ -1,5 +1,6 @@
 
 mod graph;
+mod prm_planner;
 
 #[cfg(test)]
 mod tests {
