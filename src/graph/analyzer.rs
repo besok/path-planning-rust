@@ -3,6 +3,7 @@ use crate::graph::DiGraph;
 use graphviz_rust::dot_structures::Node;
 use std::hash::Hash;
 
+pub mod astar;
 pub mod dijkstra;
 pub mod min_weight;
 pub mod visit;

@@ -1,5 +1,4 @@
 pub mod dot;
-pub mod kiss;
 pub mod generator2d;
 
 
