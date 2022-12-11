@@ -378,7 +378,7 @@ mod tests {
         );
         println!("{:?}", r);
     }
-    #[derive(Clone,Ord,PartialOrd,PartialEq,Eq)]
+    #[derive(Clone, Ord, PartialOrd, PartialEq, Eq)]
     struct One(usize);
 
     impl Add for One {
@@ -388,7 +388,6 @@ mod tests {
             One(self.0 + rhs.0)
         }
     }
-
 
     impl ToString for One {
         fn to_string(&self) -> String {
