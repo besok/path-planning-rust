@@ -56,7 +56,7 @@ where
             if let Some(ss) = self.graph.edges.get(from) {
                 let dist_from = dist[from].clone();
                 for (to, ep) in ss {
-                    let alt = dist_from.add(to_score(ep.clone()));
+                    let alt = dist_from.add_score_v(to_score(ep.clone()));
                     let dist_to = dist[to].clone();
                     if alt < dist_to {
                         dist.insert(to.clone(), alt.clone());
@@ -170,7 +170,7 @@ where
     }
 }
 
-struct MinPathProcessor<NId>
+pub struct MinPathProcessor<NId>
 where
     NId: Clone,
 {

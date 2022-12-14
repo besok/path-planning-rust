@@ -9,6 +9,22 @@ pub enum Score<ScoreValue> {
     Value(ScoreValue),
 }
 
+impl<ScoreValue> Add for Score<ScoreValue>
+where
+    ScoreValue: Add<Output = ScoreValue> + Clone,
+{
+    type Output = Score<ScoreValue>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self,rhs) {
+            (Inf,_) | (_,Inf) => Inf,
+            (Zero,res)|(res,Zero) => res,
+            (Value(lhs),Value(rhs)) => Value(lhs + rhs),
+        }
+    }
+
+}
+
 impl<ScoreValue:ToString> ToString for Score<ScoreValue> {
     fn to_string(&self) -> String {
         match self{
@@ -20,11 +36,14 @@ impl<ScoreValue:ToString> ToString for Score<ScoreValue> {
 }
 
 
+
+
+
 impl<ScoreValue> Score<ScoreValue>
 where
     ScoreValue: Add<Output = ScoreValue> + Clone,
 {
-    pub fn add(&self, score: ScoreValue) -> Score<ScoreValue> {
+    pub fn add_score_v(&self, score: ScoreValue) -> Score<ScoreValue> {
         match &self {
             Inf => Inf,
             Zero => Value(score),
