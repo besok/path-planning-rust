@@ -2,6 +2,7 @@ use super::min_weight::{MinWeight, Score};
 use crate::graph::DiGraph;
 use std::collections::hash_map::Entry::Occupied;
 use std::collections::hash_map::Entry::Vacant;
+use std::convert::identity;
 use std::{
     collections::{BinaryHeap, HashMap},
     hash::Hash,
@@ -31,7 +32,7 @@ where
 
             while let Some(s) = step {
                 path.push(s.clone());
-                if s == self.start{
+                if s == self.start {
                     break;
                 }
                 step = self.path.get(&s).cloned();
@@ -127,6 +128,25 @@ where
 impl<'a, NId, NL, EL> AStarPath<'a, NId, NL, EL>
 where
     NId: Eq + Hash + Clone,
+    EL: Ord + Add<Output = EL> + Clone,
+{
+
+    pub fn on_edge<H>(
+        &self,
+        start: NId,
+        target: NId,
+        heuristic: H,
+    ) -> MinPathStrict<NId>
+    where
+        H: Fn(&NId) -> EL,
+    {
+        self.on_edge_custom(start, target, heuristic, identity)
+    }
+}
+
+impl<'a, NId, NL, EL> AStarPath<'a, NId, NL, EL>
+where
+    NId: Eq + Hash + Clone,
 {
     pub fn new(graph: &'a DiGraph<NId, NL, EL>) -> Self {
         Self { graph }
@@ -135,12 +155,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::convert::identity;
     use super::AStarPath;
+    use crate::graph::analyzer::dijkstra::DijkstraPath;
+    use crate::graph::analyzer::dijkstra::MinPathProcessor;
     use crate::graph::DiGraph;
     use crate::graph::EmptyPayload;
-    use crate::graph::analyzer::dijkstra::MinPathProcessor;
     use crate::{digraph, extend_edges, extend_nodes};
+    use std::convert::identity;
 
     #[test]
     fn simple_test() {
@@ -157,9 +178,10 @@ mod tests {
         });
 
         let astar = AStarPath::new(&graph);
-        let _ = graph.to_file("dots/ast_graph.svg");
-        let res = astar.on_edge_custom(1, 11, |from| 0, identity);
-        let _ = graph.to_file_with("dots/ast_graph_path.svg",MinPathProcessor::new(res.path()));
-        
+
+        let astar_res = astar.on_edge(1, 11, |from| 0).path();
+        let dijkstra_res = DijkstraPath::new(&graph).on_edge(1).trail(&11).unwrap();
+
+        assert_eq!(astar_res, dijkstra_res);
     }
 }

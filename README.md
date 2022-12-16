@@ -1,4 +1,4 @@
-### Description
+## Description
 
 Path planning algorithms
 
@@ -6,5 +6,12 @@ Path planning algorithms
 
 
 
-#### Note
 The focus of the repo on the feasibility
+
+
+## What is inside
+
+### Graph builder
+### Dijkstra
+### AStar
+### DStar

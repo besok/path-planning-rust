@@ -7,6 +7,7 @@ pub mod astar;
 pub mod dijkstra;
 pub mod min_weight;
 pub mod visit;
+pub mod dstar;
 
 #[derive(Debug)]
 pub struct GraphAnalyzer<'a, NodeId, NL, EL>
