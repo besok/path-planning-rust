@@ -1,10 +1,9 @@
 pub mod analyzer;
 pub mod builder;
 pub mod visualizer;
-
 use crate::graph::analyzer::GraphAnalyzer;
-use crate::graph::visualizer::{visualize, visualize_to_file};
 use crate::graph::visualizer::dot::*;
+use crate::graph::visualizer::{vis, vis_to_file};
 
 use graphviz_rust::dot_generator::{graph, id, node};
 use graphviz_rust::dot_structures::{Graph, Id, Stmt};
@@ -12,20 +11,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Error, Formatter};
 use std::hash::Hash;
 
-#[derive(Copy, Clone, PartialEq, Default)]
-pub struct EmptyPayload;
-
-impl ToString for EmptyPayload {
-    fn to_string(&self) -> String {
-        "".to_string()
-    }
-}
-
-impl Debug for EmptyPayload {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(".")
-    }
-}
+use self::visualizer::DotGraphVisualizer;
 
 #[derive(Debug)]
 pub struct DiGraph<NId, NL, EL>
@@ -40,35 +26,6 @@ where
 impl DiGraph<usize, EmptyPayload, EmptyPayload> {
     pub fn empty() -> Self {
         Self::new()
-    }
-}
-
-impl<NId, NL, EL> DiGraph<NId, NL, EL>
-where
-    NId: Eq + Hash + ToString,
-    NL: ToString,
-    EL: ToString,
-{
-
-}
-
-impl<NId: ToString, NL: ToString, EL: ToString> DiGraph<NId, NL, EL>
-where
-    NId: Eq + Hash + ToString,
-    NL: ToString,
-    EL: ToString,
-{
-    pub fn to_file(&self, path: &str) -> std::io::Result<String> {
-        let cg = VizGraph::new(self);
-        let graph = cg.to_dot(ToStringProcessor {});
-        visualize_to_file(graph, path.to_string())
-    }
-    pub fn to_file_with<'a,P>(&'a self, path: &str, processor:P ) -> std::io::Result<String>
-    where P:Processor<'a,NId,NL,EL>
-    {
-        let cg = VizGraph::new(self);
-        let graph = cg.to_dot(processor);
-        visualize_to_file(graph, path.to_string())
     }
 }
 
@@ -114,8 +71,11 @@ where
     pub fn start(&self) -> &Option<NId> {
         &self.start
     }
-    pub fn find(&self) -> GraphAnalyzer<NId, NL, EL> {
+    pub fn analyze(&self) -> GraphAnalyzer<NId, NL, EL> {
         GraphAnalyzer { graph: &self }
+    }
+    pub fn visualize(&self) -> DotGraphVisualizer<NId, NL, EL> {
+        DotGraphVisualizer::new(self)
     }
 }
 
@@ -136,5 +96,20 @@ where
 {
     pub fn add_bare_edge(&mut self, from: NId, to: NId) -> Option<EL> {
         self.add_edge(from, to, Default::default())
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Default)]
+pub struct EmptyPayload;
+
+impl ToString for EmptyPayload {
+    fn to_string(&self) -> String {
+        "e".to_string()
+    }
+}
+
+impl Debug for EmptyPayload {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str("e")
     }
 }

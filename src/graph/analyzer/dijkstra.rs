@@ -1,5 +1,5 @@
 use crate::graph::analyzer::min_weight::{MinWeight, Score};
-use crate::graph::visualizer::dot::{Processor, ToStringProcessor};
+use crate::graph::visualizer::dot::{DotProcessor, ToStringProcessor};
 use crate::graph::DiGraph;
 use graphviz_rust::attributes::*;
 use graphviz_rust::dot_generator::*;
@@ -146,7 +146,7 @@ where
     }
 }
 
-impl<'a, NId, NL, EL, ScoreV> Processor<'a, NId, NL, EL> for MinScorePathProcessor<NId, ScoreV>
+impl<'a, NId, NL, EL, ScoreV> DotProcessor<'a, NId, NL, EL> for MinScorePathProcessor<NId, ScoreV>
 where
     NId: Eq + Hash + Clone + ToString,
     NL: ToString,
@@ -166,7 +166,7 @@ where
     }
 
     fn edge(&self, from: &'a NId, to: &'a NId, el: &'a EL) -> Stmt {
-        (&self.delegate as &dyn Processor<NId, NL, EL>).edge(from, to, el)
+        (&self.delegate as &dyn DotProcessor<NId, NL, EL>).edge(from, to, el)
     }
 }
 
@@ -190,7 +190,7 @@ where
     }
 }
 
-impl<'a, NId, NL, EL> Processor<'a, NId, NL, EL> for MinPathProcessor<NId>
+impl<'a, NId, NL, EL> DotProcessor<'a, NId, NL, EL> for MinPathProcessor<NId>
 where
     NId: Eq + Hash + Clone + ToString,
     NL: ToString,
@@ -198,7 +198,7 @@ where
 {
     fn node(&self, id: &'a NId, nl: &'a NL) -> Stmt {
         if self.path.is_empty() {
-            (&self.delegate as &dyn Processor<NId, NL, EL>).node(id, nl)
+            (&self.delegate as &dyn DotProcessor<NId, NL, EL>).node(id, nl)
         } else {
             let f = self.path.get(0).unwrap();
             let l = self.path.last().unwrap();
@@ -209,7 +209,7 @@ where
             } else if self.path.contains(id) {
                 self.delegate.node_with_attrs(id, nl, vec![green])
             } else {
-                (&self.delegate as &dyn Processor<NId, NL, EL>).node(id, nl)
+                (&self.delegate as &dyn DotProcessor<NId, NL, EL>).node(id, nl)
             }
         }
     }
@@ -230,7 +230,7 @@ where
         let dotted = EdgeAttributes::style("dotted".to_string());
         match (f, t) {
             (Some(f), Some(t)) if f < t => {
-                (&self.delegate as &dyn Processor<NId, NL, EL>).edge(from, to, el)
+                (&self.delegate as &dyn DotProcessor<NId, NL, EL>).edge(from, to, el)
             }
             _ => self.delegate.edge_with_attrs(from, to, el, vec![dotted]),
         }
@@ -299,7 +299,7 @@ mod tests {
            [8,9,10] => (11,1)
 
         });
-        let _ = graph.to_file("dots/output.svg");
+        let _ = graph.visualize().str_to_dot_file("dots/output.svg");
 
         let mut d = DijkstraPath::new(&graph);
         let to = d.on_edge(1).score(&11);
@@ -336,7 +336,9 @@ mod tests {
         let mut d = DijkstraPath::new(&graph);
         let to = d.on_edge(1).trail(&11).unwrap();
         assert_eq!(to, vec![1, 2, 4, 6, 7, 8, 11]);
-        let r = graph.to_file_with("dots/output1.svg", MinPathProcessor::new(to));
+        let r = graph
+            .visualize()
+            .to_dot_file("dots/output1.svg", MinPathProcessor::new(to));
         println!("{:?}", r);
     }
     #[test]
@@ -365,14 +367,16 @@ mod tests {
            [8,9,10] => (11,1)
 
         });
-        let _ = graph.to_file("dots/output.svg");
+        let _ = graph.visualize().str_to_dot_file("dots/output.svg");
         let mut dijkstra = DijkstraPath::new(&graph);
         let map = dijkstra.on_edge(1);
         let to = map.trail(&11).unwrap();
         assert_eq!(to, vec![1, 2, 4, 6, 7, 8, 11]);
-        let r = graph.to_file_with("dots/output_path.svg", MinPathProcessor::new(to));
+        let r = graph
+            .visualize()
+            .to_dot_file("dots/output_path.svg", MinPathProcessor::new(to));
         println!("{:?}", r);
-        let r = graph.to_file_with(
+        let r = graph.visualize().to_dot_file(
             "dots/output_sc.svg",
             MinScorePathProcessor::new(map.from, map.distance),
         );
@@ -411,13 +415,15 @@ mod tests {
            6 => 7;
            7 => 8;
         });
-        let r = graph.to_file("dots/graph.svg");
+        let r = graph.visualize().str_to_dot_file("dots/graph.svg");
         assert!(r.is_ok());
         let mut d_path = DijkstraPath::new(&graph);
         let path = d_path.on_edge(1);
         let trail = path.trail(&8).unwrap();
 
-        let r = graph.to_file_with("dots/graph_path.svg", MinPathProcessor::new(trail));
+        let r = graph
+            .visualize()
+            .to_dot_file("dots/graph_path.svg", MinPathProcessor::new(trail));
         assert!(r.is_ok());
     }
 }

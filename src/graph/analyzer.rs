@@ -5,9 +5,16 @@ use std::hash::Hash;
 
 pub mod astar;
 pub mod dijkstra;
+pub mod fs;
 pub mod min_weight;
 pub mod visit;
-pub mod dstar;
+
+enum SearchRes {
+    Next,
+    Find,
+    Stop,
+    Skip,
+}
 
 #[derive(Debug)]
 pub struct GraphAnalyzer<'a, NodeId, NL, EL>

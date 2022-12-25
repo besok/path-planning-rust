@@ -1,17 +1,15 @@
-## Description
+# Description
 
-Path planning algorithms
-
-
-
-
-
-The focus of the repo on the feasibility
-
+A sandbox to play with algorithms for path planning.
 
 ## What is inside
 
-### Graph builder
-### Dijkstra
-### AStar
-### DStar
+- Di Graph
+- Graph builder: a set of macros to construct or extend graphs
+
+- Graph visualization to dot format
+
+- Dijkstra
+- AStar
+- BFS
+
